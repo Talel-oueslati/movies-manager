@@ -1,0 +1,7 @@
+{
+  "name": "movies-manager",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
