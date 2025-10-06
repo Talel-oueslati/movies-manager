@@ -1,32 +1,17 @@
-/* For information on how to create your own theme, please see:
-http://ionicframework.com/docs/theming/ */
-/* Add to your global CSS file */
-.profile-photo-button {
-  --border-radius: 50%;
-  --padding-start: 0;
-  --padding-end: 0;
-}
+/* :root {
+  --ion-color-primary: #bb86fc; 
+  --ion-color-secondary: #03dac6;
+  --ion-color-tertiary: #cf6679;
 
-.profile-photo-button::part(native) {
-  border-radius: 50%;
-  padding: 0;
-}
+  --ion-background-color: #1e1e1e;
+  --ion-text-color: #ffffff;
 
-.photo-preview {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid var(--ion-color-primary);
-}
+  --ion-card-background: #2c2c2c;
+  --ion-card-border-radius: 12px;
+  --ion-card-shadow: 0 4px 12px rgba(0,0,0,0.3);
 
-.photo-placeholder {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background-color: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px dashed #ccc;
-}
+  --ion-button-background: #cf3333; 
+  --ion-button-color: #fff;
+  --ion-button-border-radius: 8px;
+} */
+:root{--ion-background-color: #1e1e1e; --ion-text-color: #ffffff; --ion-color-primary: #ff0000; }

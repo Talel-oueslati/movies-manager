@@ -26,6 +26,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
 import Profile from './pages/Profile';
+import AdminDashboard from './pages/admin-pages/admin-dashboard';
 
 setupIonicReact();
 
@@ -37,6 +38,7 @@ const App: React.FC = () => (
         <Route exact path="/login" component={Login} />
         <Route exact path="/signup" component={SignUp} />
         <Route exact path="/profile" component={Profile} />
+        <Route exact path="/admin-dashboard" component={AdminDashboard} />
 
         <Route exact path="/">
           <Redirect to="/login" />
