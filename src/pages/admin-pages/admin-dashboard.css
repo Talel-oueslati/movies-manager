@@ -1,0 +1,68 @@
+.admin-dashboard {
+  --background: #f7f9fc;
+  color: #111;
+  padding: 20px;
+}
+.navbar {
+  margin-top: 30px;
+}
+h2 {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #222;
+}
+.logo-image{
+margin-bottom: 16px;}
+/* Add Movie Form */
+.add-movie-section {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 30px;
+  margin-top: 70px;
+}
+
+.add-movie-form ion-input {
+  margin-bottom: 12px;
+  --background: #fafafa;
+  --border-radius: 8px;
+  --padding-start: 10px;
+  
+}
+
+.add-movie-form ion-button {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+/* User list */
+.user-list-section {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.user-item {
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: #f0f4ff;
+  color: #111;
+}
+.logo-image{
+  width: 40px;
+  height: 40px;
+    margin-top: -2px;
+
+}
+.navbar-user{
+  margin-top: -1px;
+}
+/* Spinner */
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80vh;
+}

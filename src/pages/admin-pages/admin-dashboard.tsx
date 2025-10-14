@@ -1,67 +1,86 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonContent,
-  IonButton, IonInput, IonLabel, IonItem, IonTextarea,
-  IonSelect, IonSelectOption, IonAlert, IonSpinner
-} from '@ionic/react';
-import { signOut } from 'firebase/auth';
-import { collection, getDocs, doc, updateDoc, addDoc } from 'firebase/firestore';
-import { useHistory } from 'react-router-dom';
-import { auth, db } from '../../firebaseConfig';
-import Navbar from '../Navbar';
-import './admin-dashboard.css';
+  IonInput, IonButton, IonLabel, IonItem, IonList, IonSpinner, IonAlert,
+  IonIcon,
+  IonImg
+} from "@ionic/react";
+import { collection, getDocs, updateDoc, doc, addDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import "./admin-dashboard.css";
+
+import logo from "../../assets/movie-logoapp.png";
+
+import { auth, db } from "../../firebaseConfig";
+import { logOutOutline, personCircle } from "ionicons/icons";
+import { useHistory } from "react-router";
+import { Movie } from "../../models/Movie";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+
 interface User {
   uid: string;
   nom: string;
   prénom: string;
   email: string;
-  age: number;
-  role: 'user' | 'admin';
-  active?: boolean;
+  active: boolean;
+  role?: string;
 }
 
-interface Movie {
-  id?: string;
-  title: string;
-  poster_path: string;
-  genre_ids: number[];
-  release_date: string;
+interface GenreRow {
+  genreId: number;
+  movies: Movie[];
+  page: number;
+  totalPages: number;
 }
-
-const genreMap: Record<number, string> = {
-  28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime",
-  99: "Documentary", 18: "Drama", 10751: "Family", 14: "Fantasy", 36: "History",
-  27: "Horror", 10402: "Music", 9648: "Mystery", 10749: "Romance", 878: "Sci-Fi",
-  10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
-};
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [newMovie, setNewMovie] = useState<Movie>({
-    title: '',
-    poster_path: '',
-    genre_ids: [],
-    release_date: ''
-  });
+  const [user, setUser] = useState<any>(null);
+  const [favorites, setFavorites] = useState<Movie[]>([]);
+  const [adminMovies, setAdminMovies] = useState<Movie[]>([]);
+  const [genreRows, setGenreRows] = useState<GenreRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertMessage, setAlertMessage] = useState('');
   const [showAlert, setShowAlert] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const history = useHistory();
 
-  // Fetch all users
+  // Movie form states
+  const [movieTitle, setMovieTitle] = useState("");
+  const [movieGenre, setMovieGenre] = useState("");
+  const [moviePosterFile, setMoviePosterFile] = useState<File | null>(null);
+  const [moviePosterPreview, setMoviePosterPreview] = useState<string>("");
+  const [movieDescription, setMovieDescription] = useState("");
+
+  // Fetch current admin
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setUser(data);
+          setFavorites(data.favorites || []);
+        }
+      } else {
+        history.push('/login');
+      }
+    });
+    return () => unsubscribe();
+  }, [history]);
+
+  // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
-      setLoading(true);
       try {
-        const snapshot = await getDocs(collection(db, 'users'));
-        const usersList: User[] = snapshot.docs.map(doc => ({
-          uid: doc.id,
-          ...(doc.data() as any)
+        const querySnapshot = await getDocs(collection(db, "users"));
+        const userList: User[] = querySnapshot.docs.map(doc => ({
+          ...(doc.data() as User),
+          uid: doc.id, // ensure uid comes from doc.id
         }));
-        setUsers(usersList);
-      } catch (error) {
-        console.error(error);
-        setAlertMessage('Error fetching users');
+        setUsers(userList);
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setAlertMessage("Failed to load users. Check your Firestore rules.");
         setShowAlert(true);
       } finally {
         setLoading(false);
@@ -70,34 +89,69 @@ const AdminDashboard: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // Toggle user active status
-  const toggleUserActive = async (user: User) => {
+  // Toggle active status
+  const toggleUserActive = async (uid: string, currentStatus: boolean) => {
     try {
-      const userRef = doc(db, 'users', user.uid);
-      await updateDoc(userRef, { active: !user.active });
-      setUsers(users.map(u => u.uid === user.uid ? { ...u, active: !u.active } : u));
-    } catch (error) {
-      console.error(error);
-      setAlertMessage('Error updating user');
+      await updateDoc(doc(db, "users", uid), { active: !currentStatus });
+      setUsers(users.map(u => (u.uid === uid ? { ...u, active: !currentStatus } : u)));
+    } catch (err) {
+      console.error(err);
+      setAlertMessage("Error updating user status");
       setShowAlert(true);
+    }
+  };
+
+  // Handle movie poster file input (desktop)
+  const handleMoviePosterFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setMoviePosterFile(file);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (reader.result) setMoviePosterPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   // Add new movie
   const handleAddMovie = async () => {
-    if (!newMovie.title || !newMovie.poster_path || !newMovie.genre_ids.length || !newMovie.release_date) {
-      setAlertMessage('Please fill all movie fields');
+    if (!movieTitle || !movieGenre) {
+      setAlertMessage("Please fill in the movie title and genre.");
       setShowAlert(true);
       return;
     }
+
     try {
-      await addDoc(collection(db, 'movies'), newMovie);
-      setAlertMessage('Movie added successfully!');
+      let posterBase64 = "";
+      if (moviePosterFile) {
+        posterBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(moviePosterFile);
+        });
+      }
+
+      await addDoc(collection(db, "movies"), {
+        title: movieTitle,
+        genre: movieGenre,
+        posterBase64: posterBase64 || "",
+        description: movieDescription || "",
+        createdAt: serverTimestamp(),
+      });
+
+      setAlertMessage("Movie added successfully!");
       setShowAlert(true);
-      setNewMovie({ title: '', poster_path: '', genre_ids: [], release_date: '' });
-    } catch (error) {
-      console.error(error);
-      setAlertMessage('Error adding movie');
+      setMovieTitle("");
+      setMovieGenre("");
+      setMoviePosterFile(null);
+      setMoviePosterPreview("");
+      setMovieDescription("");
+    } catch (err) {
+      console.error(err);
+      setAlertMessage("Error adding movie");
       setShowAlert(true);
     }
   };
@@ -105,99 +159,126 @@ const AdminDashboard: React.FC = () => {
   const handleLogout = async () => {
     await signOut(auth);
     history.push('/login');
+    setDropdownOpen(false);
+  };
+
+  const handleProfileClick = () => {
+    if (user) history.push('/profile');
+    setDropdownOpen(false);
+  };
+
+  const UserAvatar: React.FC<{ user: any; size?: string }> = ({ user, size = '40px' }) => {
+    const [imageError, setImageError] = useState(false);
+
+    return (
+      <div className="user-avatar" style={{ width: size, height: size }}>
+        {user?.photo && !imageError ? (
+          <img
+            src={user.photo}
+            alt={`${user?.prénom} ${user?.nom}`}
+            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <IonIcon
+            icon={personCircle}
+            style={{ fontSize: size, color: '#fff' }}
+          />
+        )}
+      </div>
+    );
   };
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="dark">
-          <Navbar />
-          <IonButton slot="end" onClick={handleLogout}>Logout</IonButton>
-        </IonToolbar>
-      </IonHeader>
+      <div className="navbar">
+        <div className="navbar-logo">
+          <IonImg src={logo} alt="Movie Logo" className="logo-image" />
+        </div>
+        <div className="navbar-user" onClick={() => setDropdownOpen(!dropdownOpen)}>
+          <UserAvatar user={user} size="40px" />
+          <span className="user-name">{user?.prénom} {user?.nom}</span>
+          <div className={`dropdown-menu ${dropdownOpen ? 'open' : ''}`}>
+            <ul>
+              <li className="dropdown-item" onClick={handleProfileClick}>
+                <IonIcon icon={personCircle} className="dropdown-icon" style={{ color: 'white' }} />
+                <span style={{ color: 'white' }}>Profile</span>
+              </li>
+              <li className="dropdown-item" onClick={handleLogout}>
+                <IonIcon style={{ color: 'white' }} icon={logOutOutline} className="dropdown-icon" />
+                <span style={{ color: 'white' }}>Logout</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-      <IonContent className="ion-padding">
-        <h2>Admin Dashboard</h2>
+      <IonContent className="admin-dashboard">
+        {loading ? (
+          <div className="centered"><IonSpinner name="crescent" /></div>
+        ) : (
+          <>
+            {/* Add Movie Section */}
+            <section className="add-movie-section">
+              <h2>Add New Movie</h2>
+              <div className="add-movie-form">
+                <IonInput
+                  label="Title"
+                  value={movieTitle}
+                  onIonChange={e => setMovieTitle(e.detail.value!)}
+                  placeholder="Enter movie title"
+                />
+                <IonInput
+                  label="Genre"
+                  value={movieGenre}
+                  onIonChange={e => setMovieGenre(e.detail.value!)}
+                  placeholder="e.g. Action, Comedy, Drama"
+                />
+                <input type="file" accept="image/*" onChange={handleMoviePosterFile} />
+                {moviePosterPreview && (
+                  <IonImg src={moviePosterPreview} style={{ width: "120px", margin: "10px 0", borderRadius: "5px" }} />
+                )}
+                <IonInput
+                  label="Description"
+                  value={movieDescription}
+                  onIonChange={e => setMovieDescription(e.detail.value!)}
+                  placeholder="(optional)"
+                />
+                <IonButton expand="block" onClick={handleAddMovie}>
+                  ➕ Add Movie
+                </IonButton>
+              </div>
+            </section>
 
-        {/* Users Table */}
-        <section style={{ marginBottom: '30px' }}>
-          <h3>Manage Users</h3>
-          {loading ? <IonSpinner name="crescent" /> : (
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #555' }}>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user.uid} style={{ borderBottom: '1px solid #333' }}>
-                    <td>{user.prénom} {user.nom}</td>
-                    <td>{user.email}</td>
-                    <td>{user.role}</td>
-                    <td>{user.active ? 'Active' : 'Disabled'}</td>
-                    <td>
-                      <IonButton size="small" onClick={() => toggleUserActive(user)}>
-                        {user.active ? 'Disable' : 'Enable'}
-                      </IonButton>
-                    </td>
-                  </tr>
+            {/* User Management Section */}
+            <section className="user-list-section">
+              <h2>Manage Users</h2>
+              <IonList>
+                {users.map(u => (
+                  <IonItem key={u.uid} className="user-item">
+                    <IonLabel>
+                      <strong style={{ color: '#000000ff' }}>{u.nom} {u.prénom}</strong><br />
+                      <small style={{ color: '#000000ff' }}>{u.email}</small>
+                    </IonLabel>
+                    <IonButton
+                      color={u.active ? "danger" : "success"}
+                      onClick={() => toggleUserActive(u.uid, u.active)}
+                    >
+                      {u.active ? "Deactivate" : "Activate"}
+                    </IonButton>
+                  </IonItem>
                 ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-
-        {/* Add Movie Form */}
-        <section>
-          <h3>Add New Movie</h3>
-          <IonItem>
-            <IonLabel position="floating">Title</IonLabel>
-            <IonInput
-              value={newMovie.title}
-              onIonChange={e => setNewMovie({ ...newMovie, title: e.detail.value! })}
-            />
-          </IonItem>
-          <IonItem>
-            <IonLabel position="floating">Poster URL</IonLabel>
-            <IonInput
-              value={newMovie.poster_path}
-              onIonChange={e => setNewMovie({ ...newMovie, poster_path: e.detail.value! })}
-            />
-          </IonItem>
-          <IonItem>
-            <IonLabel>Genres</IonLabel>
-            <IonSelect
-              value={newMovie.genre_ids}
-              multiple
-              onIonChange={e => setNewMovie({ ...newMovie, genre_ids: e.detail.value })}
-            >
-              {Object.entries(genreMap).map(([id, name]) => (
-                <IonSelectOption key={id} value={Number(id)}>{name}</IonSelectOption>
-              ))}
-            </IonSelect>
-          </IonItem>
-          <IonItem>
-            <IonLabel position="floating">Release Date</IonLabel>
-            <IonInput
-              type="date"
-              value={newMovie.release_date}
-              onIonChange={e => setNewMovie({ ...newMovie, release_date: e.detail.value! })}
-            />
-          </IonItem>
-          <IonButton expand="block" style={{ marginTop: '10px' }} onClick={handleAddMovie}>Add Movie</IonButton>
-        </section>
+              </IonList>
+            </section>
+          </>
+        )}
 
         <IonAlert
           isOpen={showAlert}
           onDidDismiss={() => setShowAlert(false)}
           header="Notification"
           message={alertMessage}
-          buttons={['OK']}
+          buttons={["OK"]}
         />
       </IonContent>
     </IonPage>

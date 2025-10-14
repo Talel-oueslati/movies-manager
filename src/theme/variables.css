@@ -14,4 +14,12 @@
   --ion-button-color: #fff;
   --ion-button-border-radius: 8px;
 } */
-:root{--ion-background-color: #1e1e1e; --ion-text-color: #ffffff; --ion-color-primary: #ff0000; }
+/* :root{--ion-background-color: #1e1e1e;
+  
+   }  */
+
+ion-card{
+margin-top:150px ;
+margin-left: auto;
+margin-right: auto;
+}

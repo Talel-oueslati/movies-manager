@@ -1,95 +1,344 @@
-.dark-bg {
-  --background: #181818;
-  background-color: #181818;
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  background-color: #111;
+  z-index: 100;}
+
+.navbar-logo img {
+  height: 40px;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+
+}
+
+.user-name {
+  color: white;
+  margin-left: 10px;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background-color: #222;
+  border-radius: 5px;
+  display: none;
+  z-index: 200;
+}
+
+.dropdown-menu.open {
+  display: block;
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-item:hover {
+  background-color: #333;
+}
+
+.main-content {
+  padding-top: 70px; 
+}
+
+/* Logo Styles */
+.navbar-logo {
+  display: flex;
+  align-items: center;
+    margin-top:-1px;
+
+
+}
+/* Prevent header overlay issues */
+.custom-header {
+  background: transparent !important;
+  position: relative;
+  z-index: 100;
+}
+
+/* Allow clicks inside toolbar */
+
+
+/* Make sure content isn't hidden under header */
+.main-content {
+  padding-top: 70px; /* Adjust depending on your navbar height */
+}
+
+/* Optional: keep dropdown on top of everything */
+.dropdown-menu {
+  position: absolute;
+  top: 60px; /* adjust if needed */
+  right: 0;
+  z-index: 200;
+}
+
+.logo-image {
+  height: 40px;
+  object-fit: contain;
+
+}
+
+/* User Section with Dropdown */
+.navbar-user {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.navbar-user .user-name {
+  color: white;
+  margin-left: 10px;
+  font-size: 16px;
+  font-weight: 500;
+    margin-top: 10px;
+}
+
+.navbar-user .user-avatar {
+  border: 2px solid transparent;
+  transition: border-color 0.3s ease;
+}
+
+.navbar-user:hover .user-avatar {
+  border-color: var(--primary-color);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  color: white;
+  right: 0;
+  background-color: #1f1f1f;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  min-width: 150px;
+  z-index: 1001;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+.dropdown-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
   color: white;
 }
 
+.dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 10px 0;
+}
+
+.dropdown-menu .dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  color: white;
+}
+
+.dropdown-menu .dropdown-item:hover {
+  background-color: var(--primary-color);
+}
+
+.dropdown-menu .dropdown-icon {
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+/* Main Content Adjustments */
+.main-content {
+  padding-top: var(--navbar-height);
+  background-color: var(--background-color);
+  min-height: 100vh;
+}
+
 .page-container {
-  padding: 10px 20px; /* tighter padding */
+  padding: 20px;
+  max-width: 100%;
+  margin: 0 auto;
+  background-color:#000000ff;
+
 }
 
-/* Sections */
 .section {
-  margin-bottom: 15px; /* less space between categories */
-}
-
-.section-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 30px;
 }
 
 .section-header-inline {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 15px;
 }
 
-.arrow-buttons ion-button {
+.section-title {
   color: white;
-  font-size: 1.2rem;
+  font-size: 24px;
+  font-weight: bold;
 }
 
-/* Movie rows / grids */
 .movie-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 10px; /* smaller gap */
-  margin-top: 0;
+  display: flex;
+  overflow-x: auto;
+  gap: 15px;
+  padding-bottom: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) #333;
 }
 
-/* Movie cards */
+.movie-row::-webkit-scrollbar {
+  height: 8px;
+}
+
+.movie-row::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 4px;
+}
+
+.movie-row::-webkit-scrollbar-track {
+  background: #333;
+}
+
 .movie-card {
   position: relative;
-  overflow: hidden;
-  border-radius: 10px;
-  height: 220px; /* consistent height for all cards */
+  min-width: 200px;
   transition: transform 0.3s ease;
+
 }
 
 .movie-card img {
   width: 100%;
-  height: 100%;
+  border-radius: 8px;
+
   object-fit: cover;
-  border-radius: 10px;
 }
 
 .movie-card:hover {
   transform: scale(1.05);
+  
 }
 
-/* Favorite icon (heart) */
 .favorite-icon {
   position: absolute;
-  top: 6px;
-  right: 6px;
-  font-size: 1.3rem;
-  z-index: 2;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
 }
 
-/* Title overlay on hover */
 .movie-title-overlay {
   position: absolute;
   bottom: 0;
-  width: 100%;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  color: var(--text-color);
+  padding: 10px;
   text-align: center;
-  padding: 5px;
-  font-size: 0.85rem;
+  font-size: 14px;
   font-weight: 500;
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
-.movie-card:hover .movie-title-overlay {
-  opacity: 1;
-}
-
-/* Spinner center alignment */
 .centered {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 80vh;
+  height: 100%;
+}
+
+.arrow-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.arrow-buttons ion-button {
+  --background: transparent;
+  --border-radius: 50%;
+  --padding-start: 10px;
+  --padding-end: 10px;
+  color: var(--text-color);
+}
+
+.arrow-buttons ion-button:hover {
+  --background: var(--primary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 15px;
+  }
+.dropdown-menu .dropdown-item {
+ 
+  color: white;
+}
+  .logo-image {
+    height: 30px;
+  }
+
+  .navbar-user .user-name {
+    font-size: 14px;
+  }
+
+  .dropdown-menu {
+    min-width: 120px;
+  }
+
+  .dropdown-menu .dropdown-item {
+    font-size: 12px;
+    padding: 8px 15px;
+  }
+
+  .section-title {
+    font-size: 20px;
+  }
+
+  .movie-card {
+    min-width: 150px;
+  }
+}
+/* Make sure navbar stays on top and dropdown works */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px; /* adjust as needed */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  background-color: #111; /* dark background */
+  z-index: 100;
+}
+
+/* Ensure dropdown is clickable */
+.dropdown-menu {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  z-index: 200;
 }

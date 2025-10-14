@@ -1,55 +1,68 @@
-/* Full center */
+/* Full center wrapper */
 .login-wrapper {
-  --background: #313131;
+  --background: #1b1b1b;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%; /* full screen */
-  padding: 20px; /* space on mobile */
+  height: 100vh; /* full viewport height */
+  padding: 20px;
+  flex-direction: column; /* stack items vertically */
 }
 
+.decor-content{
+}
 /* Card */
 .login-card {
-  background: #313131;
+  background: #1b1b1b;
   border-radius: 20px;
-  box-shadow: 0px 8px 25px rgba(0, 0, 0, 0.1);
   max-width: 950px;
   width: 100%;
   overflow: hidden;
-  margin-top: 100px;
-
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* center contents horizontally */
+  padding: 40px 20px;
 }
 
-/* Left side (form) */
-.form-section {
-  padding: 40px;
+/* Logo */
+.login-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 30px; /* spacing below logo */
+  display: block;
 }
 
-.form-wrapper {
-  max-width: 350px;
-  margin: auto;
-}
-
-/* Texts */
+/* Title and subtitle */
 .title {
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 5px;
+  font-size: 50px;
+  color: #ffffff;
+  text-align: center;
+  margin: 0 0 10px 0;
 }
 
 .subtitle {
   font-size: 14px;
   color: #5c5c5c;
-  margin-bottom: 20px;
+  text-align: center;
+  margin: 0 0 30px 0;
 }
 
-/* Inputs */
+/* Form wrapper */
+.form-wrapper {
+  max-width: 350px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .input-item {
   border-radius: 10px;
   margin-bottom: 15px;
-  background: #f0f4ff;
+  --background: #1b1b1b;
   --highlight-background: transparent;
-    border: #f0f4ff 2px solid;
+  padding: 0 10px;
+  border: #f0f4ff 2px solid;
 }
 
 /* Button */
@@ -57,7 +70,15 @@
   margin-top: 10px;
   border-radius: 12px;
   font-weight: 600;
-  
+  color: #000000 !important;
+  --background: #f2ff00 !important;
+  --border-radius: 8px;
+  --padding-start: 1rem;
+  --padding-end: 1rem;
+  --padding-top: 0.8rem;
+  --padding-bottom: 0.8rem;
+  font-weight: bold;
+  width: 88%;
 }
 
 /* Divider */
@@ -72,48 +93,42 @@
   display: flex;
   justify-content: center;
   gap: 10px;
+  margin-bottom: 20px;
 }
 
 /* Link */
 .signup-link {
-  margin-top: 25px;
+  margin-top: 10px;
   font-size: 14px;
   text-align: center;
 }
 
 .signup-link a {
-  color: #3b82f6;
+  color: #ffffff;
   font-weight: 600;
   text-decoration: none;
 }
 
-/* Right side */
-.decor-section {
-  background: linear-gradient(135deg, #000000, #000000);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  color: white;
-}
+/* Right side decorative section hidden for mobile */
 
-.decor-content {
-  max-width: 300px;
-  text-align: center;
-}
 
-.decor-content h3 {
-  font-size: 22px;
-  margin-bottom: 10px;
-}
-
-/* 📱 Responsive: stack on mobile */
+/* 📱 Responsive adjustments */
 @media (max-width: 768px) {
   .login-card {
-    flex-direction: column;
-      margin-top: 200px;
-
+    margin-top: 50px;
+    padding: 30px 15px;
   }
-  .decor-section {
-visibility: hidden;  }
+
+  .title {
+    font-size: 36px;
+  }
+
+  .login-logo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+  }
 }

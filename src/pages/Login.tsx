@@ -14,18 +14,19 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
-  IonButtons
+  IonButtons,
+  IonImg
 } from '@ionic/react';
 import { logoGoogle, logoFacebook, mailOutline, lockClosedOutline } from 'ionicons/icons';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth, db } from '../firebaseConfig';
 import { useHistory } from 'react-router-dom';
+import logo from "../assets/movie-logoapp.png";
 
 import './login.css';
 import Navbar from './Navbar';
 import { User } from '../models/User';
 import { doc, getDoc } from 'firebase/firestore';
-
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -49,57 +50,33 @@ const Login: React.FC = () => {
   //   }
   // };
 const handleLogin = async () => {
-  if (!email || !password) {
-    setAlertMessage('Please enter both email and password');
-    setShowAlert(true);
-    return;
-  }
-
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const currentUser = userCredential.user;
+    const userDoc = await getDoc(doc(db, "users", userCredential.user.uid));
 
-    // Fetch user data from Firestore
-    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-
-    if (!userDoc.exists()) {
-      setAlertMessage('User data not found.');
+    if (!userDoc.exists() || userDoc.data().active === false) {
+      await signOut(auth);
+      setAlertMessage("Your account is deactivated. Please contact the administrator.");
       setShowAlert(true);
       return;
     }
 
-    const userData = userDoc.data() as User;
-
-    // Check if user is active
-    if (userData.active === false) {
-      setAlertMessage('Your account is disabled. Contact admin.');
-      setShowAlert(true);
-      await signOut(auth); // log out the disabled user
-      return;
-    }
-
-    // Redirect based on role
-    if (userData.role === 'admin') {
-      history.push('/admin-dashboard'); // go to admin page
+    if (userDoc.data().role === "admin") {
+      history.push("/admin-dashboard");
     } else {
-      history.push('/home'); // normal user
+      history.push("/home");
     }
-
   } catch (error: any) {
     setAlertMessage(`Login failed: ${error.message}`);
     setShowAlert(true);
   }
 };
 
+
   return (
     <IonPage>
       <IonHeader>
-  <IonToolbar>
-    <IonTitle>Home</IonTitle>
-    <IonButtons slot="end">
-      <Navbar />
-    </IonButtons>
-  </IonToolbar>
+
 </IonHeader>
       <IonContent className="login-wrapper">
         <IonGrid className="login-card">
@@ -107,12 +84,14 @@ const handleLogin = async () => {
             {/* Left Section: Form */}
             <IonCol size="12" sizeMd="6" className="form-section">
               <div className="form-wrapper">
-                <h2 className="title">Sign In</h2>
+                 <IonImg src={logo} alt="Movie App Logo" className="login-logo" />
+                <h2 className="title">Welcome Back</h2>
                 <p className="subtitle">Welcome back! Please login to your account.</p>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={mailOutline} slot="start" color='white' />
-                  <IonInput
+                  <IonIcon icon={mailOutline} slot="start" style={{color:"white"}} />
+                  <IonInput 
+                  style={{color:"white"}}
                     type="email"
                     value={email}
                     placeholder="Enter your email"
@@ -121,8 +100,9 @@ const handleLogin = async () => {
                 </IonItem>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={lockClosedOutline} slot="start" color='white' />
+                  <IonIcon icon={lockClosedOutline} slot="start" style={{color:"white"}} />
                   <IonInput
+                  style={{color:"white"}}
                     type="password"
                     value={password}
                     placeholder="Enter your password"
@@ -130,14 +110,18 @@ const handleLogin = async () => {
                   />
                 </IonItem>
 
-                <IonButton expand="block" className="login-btn" onClick={handleLogin}>
-                  Login
-                </IonButton>
+                <IonButton 
+  expand="block" 
+  className="login-btn" 
+  onClick={handleLogin} 
+>
+  Login
+</IonButton>
 
-                <div className="divider">
+                {/* <div className="divider">
                   <span>or continue with</span>
-                </div>
-
+                </div> */}
+{/* 
                 <div className="social-buttons">
                   <IonButton fill="outline" shape="round">
                     <IonIcon icon={logoGoogle} slot="start" />
@@ -147,9 +131,9 @@ const handleLogin = async () => {
                     <IonIcon icon={logoFacebook} slot="start" />
                     Facebook
                   </IonButton>
-                </div>
+                </div> */}
 
-                <p className="signup-link">
+                <p className="signup-link" style={{color:'white'}}>
                   Don’t have an account? <a href="/signup">Sign Up</a>
                 </p>
               </div>
