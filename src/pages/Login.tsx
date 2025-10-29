@@ -82,7 +82,7 @@ const handleLogin = async () => {
         <IonGrid className="login-card">
           <IonRow>
             {/* Left Section: Form */}
-            <IonCol size="12" sizeMd="6" className="form-section">
+            <IonCol size="12" sizeMd="12" className="form-section">
               <div className="form-wrapper">
                  <IonImg src={logo} alt="Movie App Logo" className="login-logo" />
                 <h2 className="title">Welcome Back</h2>
@@ -139,13 +139,7 @@ const handleLogin = async () => {
               </div>
             </IonCol>
 
-            {/* Right Section */}
-            <IonCol size="12" sizeMd="6" className="decor-section">
-              <div className="decor-content">
-                <h3>Your data, your rules</h3>
-                <p>Secure, fast, and private authentication for your apps.</p>
-              </div>
-            </IonCol>
+    
           </IonRow>
         </IonGrid>
 

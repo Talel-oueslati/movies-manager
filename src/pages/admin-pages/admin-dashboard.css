@@ -9,7 +9,7 @@
 h2 {
   font-weight: 600;
   margin-bottom: 10px;
-  color: #222;
+  color: #ffffff;
 }
 .logo-image{
 margin-bottom: 16px;}
@@ -30,7 +30,9 @@ margin-bottom: 16px;}
   --padding-start: 10px;
   
 }
-
+.add-movie-section{
+  background: rgb(44, 44, 44);
+}
 .add-movie-form ion-button {
   margin-top: 10px;
   font-weight: 600;
@@ -38,7 +40,7 @@ margin-bottom: 16px;}
 
 /* User list */
 .user-list-section {
-  background: white;
+  background: rgb(44, 44, 44);
   padding: 20px;
   border-radius: 15px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -47,7 +49,7 @@ margin-bottom: 16px;}
 .user-item {
   margin-bottom: 8px;
   border-radius: 10px;
-  background: #f0f4ff;
+  background: #8b8b8b;
   color: #111;
 }
 .logo-image{
@@ -65,4 +67,5 @@ margin-bottom: 16px;}
   justify-content: center;
   align-items: center;
   height: 80vh;
+  --background:
 }

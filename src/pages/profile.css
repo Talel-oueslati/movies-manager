@@ -11,8 +11,31 @@ ion-content {
   padding-top: 24px;
   padding-bottom: 24px;
 }
+.profile-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+}
 
 
+
+ion-item {
+  --background: transparent;
+  --color: white;
+}
+
+ion-input {
+  --color: white;
+  --padding-start: 10px;
+}
+
+.modify-btn {
+  margin-top: 20px;
+}
+.save-btn {
+  margin-top: 20px;
+}
 
 /* Toolbar styling */
 ion-toolbar {
@@ -86,14 +109,12 @@ ion-item {
   transition: background 0.2s ease;
 }
 
-ion-item:hover {
-  --background: rgba(255,255,255,0.03) !important;
-}
+
 
 ion-label {
   color: #e0e0e0;
   display: flex;
-  gap: 8px;
+  gap: 2px;
 }
 
 ion-label strong {
@@ -114,6 +135,19 @@ ion-button.modify-btn {
   height: 48px;
   transition: all 0.3s ease;
 }
+ion-button.save-btn{
+  --background: linear-gradient(90deg, #6366f1 0%, #a855f7 100%) !important;
+  --color: #ffffff !important;
+  --border-radius: 12px;
+  margin-top: 28px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  width: 100%;
+  max-width: 320px;
+  height: 48px;
+  transition: all 0.3s ease;
+}
+
 
 ion-button.modify-btn:hover {
   --background: linear-gradient(90deg, #7879f1 0%, #b666f8 100%) !important;

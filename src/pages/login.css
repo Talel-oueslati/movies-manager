@@ -22,6 +22,8 @@
   flex-direction: column;
   align-items: center; /* center contents horizontally */
   padding: 40px 20px;
+    margin-top: 90px;
+
 }
 
 /* Logo */
@@ -95,7 +97,10 @@
   gap: 10px;
   margin-bottom: 20px;
 }
-
+.decor-section{
+  background-color: rgb(206, 0, 0) !important;
+  color: #f2ff00;
+}
 /* Link */
 .signup-link {
   margin-top: 10px;

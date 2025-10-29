@@ -21,13 +21,26 @@ const genreMap: Record<number, string> = {
   10770: "TV Movie", 53: "Thriller", 10752: "War", 37: "Western"
 };
 
+// =================== Interfaces ===================
 interface Movie {
   id: string | number;
   title: string;
-  poster_path: string;
+  poster_path?: string;
+  posterBase64?: string;
+  genre?: string;
   genre_ids?: number[];
   release_date?: string;
+  description?: string;
   addedByAdmin?: boolean;
+}
+
+interface TMDbMovie {
+  id: number;
+  title: string;
+  poster_path?: string;
+  genre_ids?: number[];
+  release_date?: string;
+  overview?: string;
 }
 
 interface GenreRow {
@@ -38,29 +51,6 @@ interface GenreRow {
 }
 
 const genresToShow = [28, 12, 16, 35, 80, 18, 14, 10749, 878];
-
-// User Avatar Component with Fallback
-const UserAvatar: React.FC<{ user: any; size?: string }> = ({ user, size = '40px' }) => {
-  const [imageError, setImageError] = useState(false);
-  
-  return (
-    <div className="user-avatar" style={{ width: size, height: size }}>
-      {user?.photo && !imageError ? (
-        <img
-          src={user.photo}
-          alt={`${user?.prénom} ${user?.nom}`}
-          style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <IonIcon 
-          icon={personCircle} 
-          style={{ fontSize: size, color: '#fff' }}
-        />
-      )}
-    </div>
-  );
-};
 
 const Home: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -102,7 +92,7 @@ const Home: React.FC = () => {
     setDropdownOpen(false);
   };
 
-  // ================= Admin Featured =================
+  // ================= Fetch Admin Movies =================
   useEffect(() => {
     const fetchAdminMovies = async () => {
       try {
@@ -110,28 +100,53 @@ const Home: React.FC = () => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
-          addedByAdmin: true
+          addedByAdmin: true,
         })) as Movie[];
         setAdminMovies(data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching admin movies:", err);
       }
     };
     fetchAdminMovies();
   }, []);
 
-  // ================= TMDb Genre Movies =================
+  // ================= Fetch TMDb Movies (initial load) =================
   useEffect(() => {
     const fetchGenreMovies = async () => {
       setLoading(true);
       try {
         const rows: GenreRow[] = [];
         for (let genreId of genresToShow) {
-          const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=1`);
-          const data = await res.json();
+          const res = await fetch(
+            `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=1`
+          );
+          const data: { results: TMDbMovie[]; total_pages: number } = await res.json();
+
+          const adminInGenre = adminMovies.filter(
+            (m) => m.genre?.toLowerCase() === genreMap[genreId]?.toLowerCase()
+          );
+
+          const combinedMovies: Movie[] = [
+            ...adminInGenre,
+            ...data.results
+              .filter(
+                (tmdb: TMDbMovie) =>
+                  !adminInGenre.some(ad => ad.title?.toLowerCase() === tmdb.title?.toLowerCase())
+              )
+              .map((tmdb) => ({
+                id: tmdb.id,
+                title: tmdb.title,
+                poster_path: tmdb.poster_path,
+                genre_ids: tmdb.genre_ids,
+                release_date: tmdb.release_date,
+                description: tmdb.overview,
+                addedByAdmin: false,
+              }))
+          ];
+
           rows.push({
             genreId,
-            movies: data.results.slice(0, 5),
+            movies: combinedMovies,
             page: 1,
             totalPages: data.total_pages,
           });
@@ -146,9 +161,9 @@ const Home: React.FC = () => {
       }
     };
     fetchGenreMovies();
-  }, []);
+  }, [adminMovies]);
 
-  // ================= Matched User =================
+  // ================= Matching Users =================
   useEffect(() => {
     const fetchMatchedUser = async () => {
       if (!user || !favorites.length) return;
@@ -159,10 +174,14 @@ const Home: React.FC = () => {
 
         snapshot.forEach(docSnap => {
           const u = docSnap.data();
-          if (u.uid === user.uid || !u.favorites) return;
-          const common = u.favorites.filter((f:any) => favorites.some(f2 => f2.id === f.id)).length;
+          if (u.uid === user.uid || !u.favorites || u.favorites.length === 0) return;
+
+          const common = u.favorites.filter((f: any) =>
+            favorites.some(f2 => f2.id === f.id)
+          ).length;
           const percent = (common / favorites.length) * 100;
-          if (percent >= 70 && percent > highestPercent) {
+
+          if (percent >= 75 && percent > highestPercent) {
             highestPercent = percent;
             bestMatch = u;
           }
@@ -176,7 +195,7 @@ const Home: React.FC = () => {
     fetchMatchedUser();
   }, [user, favorites]);
 
-  // ================= Toggle Favorite =================
+  // ================= Favorites =================
   const toggleFavorite = async (movie: Movie) => {
     if (!user?.uid) return;
     const userRef = doc(db, 'users', user.uid);
@@ -198,17 +217,46 @@ const Home: React.FC = () => {
   const handleArrowClick = async (genreId: number, direction: 'next' | 'prev') => {
     const row = genreRows.find(r => r.genreId === genreId);
     if (!row) return;
+
     let newPage = row.page;
     if (direction === 'next' && row.page < row.totalPages) newPage++;
     if (direction === 'prev' && row.page > 1) newPage--;
     if (newPage === row.page) return;
 
     try {
-      const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=${newPage}`);
-      const data = await res.json();
-      const updatedRows = genreRows.map(r => r.genreId === genreId
-        ? { ...r, movies: data.results.slice(0, 5), page: newPage, totalPages: data.total_pages }
-        : r
+      const res = await fetch(
+        `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&page=${newPage}`
+      );
+      const data: { results: TMDbMovie[]; total_pages: number } = await res.json();
+
+      // Keep admin movies constant
+      const adminInGenre = adminMovies.filter(
+        (m) => m.genre?.toLowerCase() === genreMap[genreId]?.toLowerCase()
+      );
+
+      // Combine admin + current page TMDb
+      const combinedMovies: Movie[] = [
+        ...adminInGenre,
+        ...data.results
+          .filter(
+            (tmdb: TMDbMovie) =>
+              !adminInGenre.some(ad => ad.title?.toLowerCase() === tmdb.title?.toLowerCase())
+          )
+          .map((tmdb) => ({
+            id: tmdb.id,
+            title: tmdb.title,
+            poster_path: tmdb.poster_path,
+            genre_ids: tmdb.genre_ids,
+            release_date: tmdb.release_date,
+            description: tmdb.overview,
+            addedByAdmin: false,
+          }))
+      ];
+
+      const updatedRows = genreRows.map(r =>
+        r.genreId === genreId
+          ? { ...r, movies: combinedMovies, page: newPage, totalPages: data.total_pages }
+          : r
       );
       setGenreRows(updatedRows);
     } catch (err) {
@@ -218,195 +266,132 @@ const Home: React.FC = () => {
     }
   };
 
+  // ================= Render =================
   return (
     <IonPage>
-   {/* ========== Custom Navbar ========== */}
-   <div
-    className="navbar" style={{marginTop:'-20px',backgroundColor:'#1a1a1a'}}>
-   </div>
-<div
-  className="navbar"
-  style={{
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: '10px 16px',
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#1a1a1a', // dark gray background
-    zIndex: 999,
-    height: '60px',
-    boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-  }}
->
-  {/* Logo */}
-  <div className="navbar-logo" style={{ display: 'flex', alignItems: 'center' }}>
-    <IonImg
-      src={logo}
-      alt="Movie Logo"
-      style={{ height: '40px', objectFit: 'contain' }}
-    />
-  </div>
+      {/* Navbar */}
+      <div className="navbar" style={{ marginTop: '-20px', backgroundColor: '#1a1a1a' }}></div>
+      <div
+        className="navbar"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '10px 16px',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#1a1a1a',
+          zIndex: 999,
+          height: '60px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+        }}
+      >
+        <div className="navbar-logo" style={{ display: 'flex', alignItems: 'center' }}>
+          <IonImg src={logo} alt="Movie Logo" style={{ height: '40px', objectFit: 'contain' }} />
+        </div>
 
-  {/* User Section */}
-
-  <div
-    className="navbar-user"
-    style={{ display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
-    onClick={() => setDropdownOpen(!dropdownOpen)}
-  >
-    <img
-      src={
-        user?.photo && !user.photo.startsWith("blob:")
-          ? user.photo
-          : "https://media.gqmagazine.fr/photos/603e6a8da9360b0585bcbc6a/16:9/w_2560%2Cc_limit/108387402"
-      }
-      alt="User"
-      style={{
-        width: "40px",
-        height: "40px",
-        borderRadius: "50%",
-        border: "2px solid white",
-        marginRight: "8px",
-        objectFit: "cover",
-      }}
-    />
-    <span style={{ color: 'white', fontWeight: '500' }}>
-      {user?.prénom} {user?.nom}
-    </span>
-
-    {/* Dropdown Menu */}
-    <div
-      className={`dropdown-menu ${dropdownOpen ? 'open' : ''}`}
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 5px)',
-        right: 0,
-        backgroundColor: '#1a1a1a',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        display: dropdownOpen ? 'block' : 'none',
-        minWidth: '140px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-        zIndex: 1000,
-      }}
-    >
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-        <li
-          className="dropdown-item"
-          onClick={handleProfileClick}
-          style={{
-            padding: '10px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-          }}
+        <div
+          className="navbar-user"
+          style={{ display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer' }}
+          onClick={() => setDropdownOpen(!dropdownOpen)}
         >
-          <IonIcon icon={personCircle} style={{ color: 'white', fontSize: '20px' }} />
-          <span style={{ color: 'white' }}>Profile</span>
-        </li>
-        <li
-          className="dropdown-item"
-          onClick={handleLogout}
-          style={{
-            padding: '10px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-          }}
-        >
-          <IonIcon icon={logOutOutline} style={{ color: 'white', fontSize: '20px' }} />
-          <span style={{ color: 'white' }}>Logout</span>
-        </li>
-      </ul>
-    </div>
-  </div>
-</div>
+          <img
+            src={
+              user?.photo && !user.photo.startsWith("blob:")
+                ? user.photo
+                : "https://media.gqmagazine.fr/photos/603e6a8da9360b0585bcbc6a/16:9/w_2560%2Cc_limit/108387402"
+            }
+            alt="User"
+            style={{
+              width: "40px",
+              height: "40px",
+              borderRadius: "50%",
+              border: "2px solid white",
+              marginRight: "8px",
+              objectFit: "cover",
+            }}
+          />
+          <span style={{ color: 'white', fontWeight: '500' }}>
+            {user?.prénom} {user?.nom}
+          </span>
 
+          <div
+            className={`dropdown-menu ${dropdownOpen ? 'open' : ''}`}
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 5px)',
+              right: 0,
+              backgroundColor: '#1a1a1a',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              display: dropdownOpen ? 'block' : 'none',
+              minWidth: '140px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+              zIndex: 1000,
+            }}
+          >
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              <li className="dropdown-item" onClick={handleProfileClick} style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <IonIcon icon={personCircle} style={{ color: 'white', fontSize: '20px' }} />
+                <span style={{ color: 'white' }}>Profile</span>
+              </li>
+              <li className="dropdown-item" onClick={handleLogout} style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <IonIcon icon={logOutOutline} style={{ color: 'white', fontSize: '20px' }} />
+                <span style={{ color: 'white' }}>Logout</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
+      <br /><br /><br /><br />
 
-      {/* ========== Main Content ========== */}
-<IonContent
-  fullscreen
-  className="main-content"
-  style={{
-    paddingTop: '60px', // push content below the fixed navbar
-    backgroundColor: '#000000', // dark background behind content
-  }}
->        {loading ? (
+      {/* Content */}
+      <IonContent fullscreen className="main-content" style={{ paddingTop: '60px', backgroundColor: '#000000' }}>
+        {loading ? (
           <div className="centered"><IonSpinner name="crescent" /></div>
         ) : (
           <div className="page-container">
-            {/* 🎬 Featured by Admin */}
-            {adminMovies.length > 0 && (
-              <section className="section">
-                <div className="section-header-inline">
-                  <h2 className="section-title">🎬 Featured by Admin</h2>
-                </div>
-                <div className="movie-row">
-                  {adminMovies.map(movie => {
-                    const isFav = favorites.some(f => f.id === movie.id);
-                    return (
-                      <div key={movie.id} className="movie-card">
-                        <img src={movie.poster_path || '../assets/d2.jpg'} alt={movie.title} />
-                        <IonIcon
-                          icon={isFav ? heart : heartOutline}
-                          color={isFav ? 'danger' : 'light'}
-                          className="favorite-icon"
-                          onClick={() => toggleFavorite(movie)}
-                        />
-                        <div className="movie-title-overlay" style={{color:'white'}}>{movie.title}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-
             {/* ❤️ Favorites */}
             {favorites.length > 0 && (
               <section className="section">
                 <div className="section-header-inline" style={{ alignItems: 'center' }}>
                   <h2 className="section-title">My Favorites</h2>
                   {matchedUser && (
-                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={`${matchedUser.nom} ${matchedUser.prénom}`}>
-
-<img
-  src={
-    matchedUser?.photo && !matchedUser.photo.startsWith("blob:")
-      ? matchedUser.photo
-      : "https://media.gqmagazine.fr/photos/603e6a8da9360b0585bcbc6a/16:%2Cc_limit/aa"
-  }
-  alt="User"
-  style={{
-    width: "37px",
-    height: "37px",
-    borderRadius: "50%",
-    marginRight: "8px",
-    border: "2px solid black",
-  }}
-/>
-
+                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} title={`${matchedUser.nom} ${matchedUser.prénom}`}>
+                      <img
+                        src={
+                          matchedUser?.photo && !matchedUser.photo.startsWith("blob:")
+                            ? matchedUser.photo
+                            : "https://media.gqmagazine.fr/photos/603e6a8da9360b0585bcbc6a/16:%2Cc_limit/aa"
+                        }
+                        alt="User"
+                        style={{
+                          width: "37px",
+                          height: "37px",
+                          borderRadius: "50%",
+                          marginRight: "8px",
+                          border: "2px solid black",
+                        }}
+                      />
                     </div>
                   )}
                 </div>
                 <div className="movie-row">
                   {favorites.map(movie => (
                     <div key={movie.id} className="movie-card">
-                      <img src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt={movie.title} />
+                      <img src={movie.posterBase64 || `https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt={movie.title} />
                       <IonIcon icon={heart} color="danger" className="favorite-icon" onClick={() => toggleFavorite(movie)} />
-                      <div className="movie-title-overlay" style={{color:'white'}}>{movie.title}</div>
+                      <div className="movie-title-overlay" style={{ color: 'white' }}>{movie.title}</div>
                     </div>
                   ))}
                 </div>
               </section>
             )}
 
-            {/* Genre Rows */}
+            {/* Genre Rows (TMDB + Admin) */}
             {genreRows.map(row => (
               <section key={row.genreId} className="section">
                 <div className="section-header-inline">
@@ -423,23 +408,23 @@ const Home: React.FC = () => {
                 <div className="movie-row">
                   {row.movies.map(movie => {
                     const isFav = favorites.some(f => f.id === movie.id);
+                    const posterSrc = movie.posterBase64 || (movie.poster_path ? `https://image.tmdb.org/t/p/w300${movie.poster_path}` : "../assets/default.jpg");
                     return (
                       <div key={movie.id} className="movie-card">
-                        <img src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt={movie.title} />
+                        <img src={posterSrc} alt={movie.title} />
                         <IonIcon
                           icon={isFav ? heart : heartOutline}
                           color={isFav ? 'danger' : 'light'}
                           className="favorite-icon"
                           onClick={() => toggleFavorite(movie)}
                         />
-                        <div className="movie-title-overlay "style={{color:'white'}}>{movie.title}</div>
+                        <div className="movie-title-overlay" style={{ color: 'white' }}>{movie.title}</div>
                       </div>
                     );
                   })}
                 </div>
               </section>
             ))}
-
           </div>
         )}
 
