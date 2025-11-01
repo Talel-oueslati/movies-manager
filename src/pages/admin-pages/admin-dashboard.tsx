@@ -234,7 +234,10 @@ const AdminDashboard: React.FC = () => {
                   onIonChange={e => setMovieGenre(e.detail.value!)}
                   placeholder="e.g. Action, Comedy, Drama"
                 />
-                <input type="file" accept="image/*" onChange={handleMoviePosterFile} />
+<label className="file-upload-label">
+  📁 Choose Poster
+  <input type="file" accept="image/*" onChange={handleMoviePosterFile} />
+</label>
                 {moviePosterPreview && (
                   <IonImg src={moviePosterPreview} style={{ width: "120px", margin: "10px 0", borderRadius: "5px" }} />
                 )}

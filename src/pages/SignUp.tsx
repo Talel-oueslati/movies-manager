@@ -16,12 +16,22 @@ import {
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { personOutline, mailOutline, lockClosedOutline, cameraOutline } from 'ionicons/icons';
+import {
+  Camera,
+  CameraResultType,
+  CameraSource,
+} from '@capacitor/camera';
+import { Capacitor } from '@capacitor/core';
+import {
+  personOutline,
+  mailOutline,
+  lockClosedOutline,
+  cameraOutline,
+} from 'ionicons/icons';
 import { useHistory } from 'react-router';
 import { User } from '../models/User';
 import './SignUp.css';
-import logo from "../assets/movie-logoapp.png";
+import logo from '../assets/movie-logoapp.png';
 
 const SignUp: React.FC = () => {
   const [nom, setNom] = useState('');
@@ -35,14 +45,20 @@ const SignUp: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const history = useHistory();
 
-  // For camera or gallery (works on mobile)
+  // 📸 Works on mobile (Camera + Gallery)
   const takeOrSelectPhoto = async () => {
     try {
+      if (Capacitor.getPlatform() === 'web') {
+        // fallback for browser (no native Camera)
+        document.getElementById('photoInput')?.click();
+        return;
+      }
+
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: true,
         resultType: CameraResultType.DataUrl,
-        source: CameraSource.Prompt, // user can choose camera or gallery
+        source: CameraSource.Prompt, // 👈 gives both options
       });
 
       if (image.dataUrl) setPhoto(image.dataUrl);
@@ -51,7 +67,7 @@ const SignUp: React.FC = () => {
     }
   };
 
-  // For desktop users (file picker)
+  // 🖼️ For desktop browsers (file picker)
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
@@ -65,7 +81,7 @@ const SignUp: React.FC = () => {
     }
   };
 
-  // Sign up logic
+  // 🧠 Sign up logic
   const handleSignUp = async () => {
     try {
       if (!nom || !prenom || !email || !age || !password) {
@@ -74,16 +90,19 @@ const SignUp: React.FC = () => {
         return;
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
 
-      // We save the Base64 photo directly in Firestore
       const user: User = {
         uid: userCredential.user.uid,
         nom,
         prénom: prenom,
         email,
         age: parseInt(age),
-        photo: photo || '', // base64 string
+        photo: photo || '',
         favorites: [],
       };
 
@@ -104,16 +123,23 @@ const SignUp: React.FC = () => {
       <IonContent className="signup-wrapper">
         <IonGrid className="signup-card">
           <IonRow>
-            {/* Left Section: Form */}
+            {/* Left Section */}
             <IonCol size="12" sizeMd="6" className="form-section">
               <div className="form-wrapper">
-                <IonImg src={logo} alt="Movie App Logo" className="login-logo" />
+                <IonImg
+                  src={logo}
+                  alt="Movie App Logo"
+                  className="login-logo"
+                />
                 <h2 className="title">Create Account</h2>
-                <p className="subtitle">Sign up to get started with our platform.</p>
+                <p className="subtitle">
+                  Sign up to get started with our platform.
+                </p>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={personOutline} slot="start" style={{ color: "white" }} />
-                  <IonInput style={{ color: "white" }}
+                  <IonIcon icon={personOutline} slot="start" style={{ color: 'white' }} />
+                  <IonInput
+                    style={{ color: 'white' }}
                     value={nom}
                     placeholder="Last name"
                     onIonInput={(e: any) => setNom(e.detail.value!)}
@@ -121,8 +147,9 @@ const SignUp: React.FC = () => {
                 </IonItem>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={personOutline} slot="start" style={{ color: "white" }} />
-                  <IonInput style={{ color: "white" }}
+                  <IonIcon icon={personOutline} slot="start" style={{ color: 'white' }} />
+                  <IonInput
+                    style={{ color: 'white' }}
                     value={prenom}
                     placeholder="First name"
                     onIonInput={(e: any) => setPrenom(e.detail.value!)}
@@ -130,8 +157,9 @@ const SignUp: React.FC = () => {
                 </IonItem>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={mailOutline} slot="start" style={{ color: "white" }} />
-                  <IonInput style={{ color: "white" }}
+                  <IonIcon icon={mailOutline} slot="start" style={{ color: 'white' }} />
+                  <IonInput
+                    style={{ color: 'white' }}
                     type="email"
                     value={email}
                     placeholder="Email"
@@ -140,8 +168,9 @@ const SignUp: React.FC = () => {
                 </IonItem>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={personOutline} slot="start" style={{ color: "white" }} />
-                  <IonInput style={{ color: "white" }}
+                  <IonIcon icon={personOutline} slot="start" style={{ color: 'white' }} />
+                  <IonInput
+                    style={{ color: 'white' }}
                     type="number"
                     value={age}
                     placeholder="Age"
@@ -150,8 +179,9 @@ const SignUp: React.FC = () => {
                 </IonItem>
 
                 <IonItem className="input-item">
-                  <IonIcon icon={lockClosedOutline} slot="start" style={{ color: "white" }} />
-                  <IonInput style={{ color: "white" }}
+                  <IonIcon icon={lockClosedOutline} slot="start" style={{ color: 'white' }} />
+                  <IonInput
+                    style={{ color: 'white' }}
                     type="password"
                     value={password}
                     placeholder="Password"
@@ -159,24 +189,24 @@ const SignUp: React.FC = () => {
                   />
                 </IonItem>
 
-         {/* Hidden input to trigger file selection */}
-<input
-  type="file"
-  accept="image/*"
-  id="photoInput"
-  onChange={handleFileInput}
-  style={{ display: 'none' }}
-/>
+                {/* Hidden input for web */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="photoInput"
+                  onChange={handleFileInput}
+                  style={{ display: 'none' }}
+                />
 
-{/* Single visible button */}
-<IonButton
-  expand="block"
-  className="signup-btn"
-  onClick={() => document.getElementById('photoInput')?.click()}
->
-  <IonIcon icon={cameraOutline} slot="start" />
-  Take or Choose Photo
-</IonButton>
+                {/* Take or Choose Photo */}
+                <IonButton
+                  expand="block"
+                  className="signup-btn"
+                  onClick={takeOrSelectPhoto}
+                >
+                  <IonIcon icon={cameraOutline} slot="start" />
+                  Take or Choose Photo
+                </IonButton>
 
                 {photo && (
                   <div className="photo-preview">
@@ -184,23 +214,21 @@ const SignUp: React.FC = () => {
                   </div>
                 )}
 
-                <IonButton expand="block" className="signup-btn primary" onClick={handleSignUp}>
+                <IonButton
+                  expand="block"
+                  className="signup-btn primary"
+                  onClick={handleSignUp}
+                >
                   Create Account
                 </IonButton>
 
-                <p className="signup-link" style={{ color: "white" }}>
+                <p className="signup-link" style={{ color: 'white' }}>
                   Already have an account? <a href="/login">Login</a>
                 </p>
               </div>
             </IonCol>
 
-            {/* Right Section */}
-            <IonCol size="12" sizeMd="6" className="decor-section">
-              <div className="decor-content">
-                <h3>Your data, your rules</h3>
-                <p>Create an account and take control of your experience securely.</p>
-              </div>
-            </IonCol>
+      
           </IonRow>
         </IonGrid>
 

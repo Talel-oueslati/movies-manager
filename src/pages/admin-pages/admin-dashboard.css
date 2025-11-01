@@ -1,71 +1,187 @@
+/* === GENERAL LAYOUT === */
 .admin-dashboard {
-  --background: #f7f9fc;
-  color: #111;
-  padding: 20px;
+  background: #f6f8fa;
+  min-height: 100vh;
+  padding: 2rem;
+  font-family: "Inter", system-ui, sans-serif;
 }
+
+/* === NAVBAR === */
 .navbar {
-  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 1.5rem;
+  color: white;
+  position: sticky;
+margin-top: 23px;  z-index: 100;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
-h2 {
+
+.navbar-logo .logo-image {
+  width: 55px;
+  height: 55px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  position: relative;
+  cursor: pointer;
+}
+
+.user-name {
   font-weight: 600;
-  margin-bottom: 10px;
-  color: #ffffff;
+  color: #f1f1f1;
 }
-.logo-image{
-margin-bottom: 16px;}
-/* Add Movie Form */
-.add-movie-section {
-  background: white;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  margin-bottom: 30px;
-  margin-top: 70px;
+
+.user-avatar img {
+  border: 2px solid white;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* === DROPDOWN MENU === */
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 55px;
+  background-color: #1e293b;
+  border-radius: 8px;
+  overflow: hidden;
+  display: none;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  width: 150px;
+}
+
+.dropdown-menu.open {
+  display: block;
+}
+
+.dropdown-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  color: white;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #334155;
+}
+
+/* === SECTION WRAPPERS === */
+.add-movie-section,
+.user-list-section {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+  padding: 1.8rem;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease;
+}
+
+.add-movie-section:hover,
+.user-list-section:hover {
+  transform: translateY(-3px);
+}
+
+.add-movie-section h2,
+.user-list-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  color: #1e293b;
+  border-left: 4px solid #007bff;
+  padding-left: 10px;
+}
+
+/* === FORM === */
+.add-movie-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .add-movie-form ion-input {
-  margin-bottom: 12px;
-  --background: #fafafa;
-  --border-radius: 8px;
   --padding-start: 10px;
-  
+  --border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fafafa;
 }
-.add-movie-section{
-  background: rgb(44, 44, 44);
+
+/* === CUSTOM FILE INPUT === */
+.add-movie-form input[type="file"] {
+  display: none;
 }
-.add-movie-form ion-button {
-  margin-top: 10px;
+
+.file-upload-label {
+  display: inline-block;
+  background: #007bff;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+  text-align: center;
+  width: fit-content;
+}
+
+.file-upload-label:hover {
+  background: #0056b3;
+}
+
+/* === MOVIE PREVIEW === */
+.add-movie-form ion-img {
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+/* === BUTTONS === */
+ion-button {
+  --border-radius: 8px;
+  --background: #007bff;
+  --background-hover: #0056b3;
+  --color: white;
+  --padding-start: 12px;
+  --padding-end: 12px;
   font-weight: 600;
 }
 
-/* User list */
-.user-list-section {
-  background: rgb(44, 44, 44);
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+ion-button[color="danger"] {
+  --background: #dc3545;
 }
 
+ion-button[color="success"] {
+  --background: #28a745;
+}
+
+/* === USER LIST === */
 .user-item {
-  margin-bottom: 8px;
-  border-radius: 10px;
-  background: #8b8b8b;
-  color: #111;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0.8rem 0;
 }
-.logo-image{
-  width: 40px;
-  height: 40px;
-    margin-top: -2px;
 
+.user-item ion-label {
+  color: #374151;
 }
-.navbar-user{
-  margin-top: -1px;
-}
-/* Spinner */
+
 .centered {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 80vh;
-  --background:
+  height: 70vh;
 }

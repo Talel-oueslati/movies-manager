@@ -50,18 +50,29 @@ interface GenreRow {
   totalPages: number;
 }
 
+interface MatchedUser {
+  uid: string;
+  prénom: string;
+  nom: string;
+  photo?: string;
+  email?: string;
+  favorites?: Movie[];
+  matchPercentage: number;
+}
+
 const genresToShow = [28, 12, 16, 35, 80, 18, 14, 10749, 878];
 
 const Home: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [favorites, setFavorites] = useState<Movie[]>([]);
-  const [matchedUser, setMatchedUser] = useState<any>(null);
+  const [matchedUsers, setMatchedUsers] = useState<MatchedUser[]>([]);
   const [adminMovies, setAdminMovies] = useState<Movie[]>([]);
   const [genreRows, setGenreRows] = useState<GenreRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [alertMessage, setAlertMessage] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [showMatchedUserPopup, setShowMatchedUserPopup] = useState<number | null>(null);
   const history = useHistory();
 
   // ================= User Auth =================
@@ -165,12 +176,11 @@ const Home: React.FC = () => {
 
   // ================= Matching Users =================
   useEffect(() => {
-    const fetchMatchedUser = async () => {
+    const fetchMatchedUsers = async () => {
       if (!user || !favorites.length) return;
       try {
         const snapshot = await getDocs(collection(db, 'users'));
-        let bestMatch = null;
-        let highestPercent = 0;
+        const matchedUsersList: MatchedUser[] = [];
 
         snapshot.forEach(docSnap => {
           const u = docSnap.data();
@@ -181,18 +191,27 @@ const Home: React.FC = () => {
           ).length;
           const percent = (common / favorites.length) * 100;
 
-          if (percent >= 75 && percent > highestPercent) {
-            highestPercent = percent;
-            bestMatch = u;
+          if (percent >= 75) {
+            matchedUsersList.push({
+              uid: u.uid,
+              prénom: u.prénom,
+              nom: u.nom,
+              photo: u.photo,
+              email: u.email,
+              favorites: u.favorites,
+              matchPercentage: percent
+            });
           }
         });
 
-        setMatchedUser(bestMatch);
+        // Sort by highest match percentage first
+        matchedUsersList.sort((a, b) => b.matchPercentage - a.matchPercentage);
+        setMatchedUsers(matchedUsersList);
       } catch (err) {
-        console.error('Error fetching matched user', err);
+        console.error('Error fetching matched users', err);
       }
     };
-    fetchMatchedUser();
+    fetchMatchedUsers();
   }, [user, favorites]);
 
   // ================= Favorites =================
@@ -211,6 +230,17 @@ const Home: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
+  };
+
+  // ================= Contact Button Handler =================
+  const handleContact = (email?: string) => {
+    if (email) {
+      window.location.href = `mailto:${email}`;
+    } else {
+      setAlertMessage('No email available for this user');
+      setShowAlert(true);
+    }
+    setShowMatchedUserPopup(null);
   };
 
   // ================= Genre Pagination =================
@@ -357,25 +387,89 @@ const Home: React.FC = () => {
             {/* ❤️ Favorites */}
             {favorites.length > 0 && (
               <section className="section">
-                <div className="section-header-inline" style={{ alignItems: 'center' }}>
+                <div className="section-header-inline" style={{ alignItems: 'center', justifyContent: 'space-between' }}>
                   <h2 className="section-title">My Favorites</h2>
-                  {matchedUser && (
-                    <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }} title={`${matchedUser.nom} ${matchedUser.prénom}`}>
-                      <img
-                        src={
-                          matchedUser?.photo && !matchedUser.photo.startsWith("blob:")
-                            ? matchedUser.photo
-                            : "https://media.gqmagazine.fr/photos/603e6a8da9360b0585bcbc6a/16:%2Cc_limit/aa"
-                        }
-                        alt="User"
-                        style={{
-                          width: "37px",
-                          height: "37px",
-                          borderRadius: "50%",
-                          marginRight: "8px",
-                          border: "2px solid black",
-                        }}
-                      />
+                  {matchedUsers.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: 'white', fontSize: '14px', marginRight: '8px' }}>
+                        Matched Users:
+                      </span>
+                      {matchedUsers.map((matchedUser, index) => (
+                        <div 
+                          key={matchedUser.uid}
+                          style={{ 
+                            cursor: 'pointer', 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            position: 'relative'
+                          }} 
+                          onMouseEnter={() => setShowMatchedUserPopup(index)}
+                          onMouseLeave={() => setShowMatchedUserPopup(null)}
+                        >
+                          <img
+                            src={
+                              matchedUser?.photo && !matchedUser.photo.startsWith("blob:")
+                                ? matchedUser.photo
+                                : "https://media.gqmagazine.fr/photos/603e6a8da9360b0585bcbc6a/16:%2Cc_limit/aa"
+                            }
+                            alt="User"
+                            style={{
+                              width: "37px",
+                              height: "37px",
+                              borderRadius: "50%",
+                              border: `2px solid ${matchedUser.matchPercentage >= 90 ? '#00ff00' : matchedUser.matchPercentage >= 80 ? '#ffff00' : '#ffa500'}`,
+                            }}
+                          />
+                          
+                          {/* Hover Popup */}
+                          {showMatchedUserPopup === index && (
+                            <div 
+                              style={{
+                                position: 'absolute',
+                                top: '100%',
+                                right: 0,
+                                backgroundColor: '#1a1a1a',
+                                borderRadius: '8px',
+                                padding: '12px',
+                                minWidth: '180px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                zIndex: 1000,
+                                border: '1px solid #333',
+                                marginTop: '5px'
+                              }}
+                            >
+                              <div style={{ color: 'white', fontWeight: 'bold', marginBottom: '4px' }}>
+                                {matchedUser.prénom} {matchedUser.nom}
+                              </div>
+                              <div style={{ 
+                                color: matchedUser.matchPercentage >= 90 ? '#00ff00' : 
+                                       matchedUser.matchPercentage >= 80 ? '#ffff00' : '#ffa500',
+                                fontSize: '12px', 
+                                marginBottom: '8px',
+                                fontWeight: 'bold'
+                              }}>
+                                Match: {Math.round(matchedUser.matchPercentage)}%
+                              </div>
+                              <div style={{ color: '#ccc', fontSize: '11px', marginBottom: '8px' }}>
+                                {matchedUser.favorites?.length || 0} favorites in common
+                              </div>
+                              <IonButton 
+                                size="small" 
+                                fill="solid" 
+                                color="primary"
+                                onClick={() => handleContact(matchedUser.email)}
+                                style={{ 
+                                  width: '100%',
+                                  '--background': '#e50914',
+                                  '--background-hover': '#b2070f'
+                                }}
+                              >
+                                Contact
+                              </IonButton>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
